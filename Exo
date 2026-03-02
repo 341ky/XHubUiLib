@@ -419,7 +419,7 @@ end
 local function stroke(parent, color, tr, thick)
     local nextColor = color or PURE_WHITE
     if isNearlyWhite(nextColor) then
-        nextColor = Color3.fromRGB(160, 204, 235)
+        nextColor = Color3.fromRGB(162, 170, 186)
     end
     return create("UIStroke", {
         Color = nextColor,
@@ -495,20 +495,20 @@ local Library = {
     _window = nil,
     _notifyHolder = nil,
     Theme = {
-        Background = Color3.fromRGB(5, 15, 29),
-        Surface = Color3.fromRGB(9, 30, 50),
-        SurfaceAlt = Color3.fromRGB(17, 44, 69),
-        SurfaceDeep = Color3.fromRGB(4, 20, 36),
-        SurfaceRaised = Color3.fromRGB(24, 58, 87),
-        Accent = Color3.fromRGB(97, 214, 255),
-        AccentDark = Color3.fromRGB(34, 141, 214),
-        Text = Color3.fromRGB(233, 245, 255),
-        Muted = Color3.fromRGB(140, 174, 205),
-        Success = Color3.fromRGB(103, 217, 196),
+        Background = Color3.fromRGB(9, 11, 15),
+        Surface = Color3.fromRGB(14, 16, 22),
+        SurfaceAlt = Color3.fromRGB(20, 23, 31),
+        SurfaceDeep = Color3.fromRGB(10, 12, 18),
+        SurfaceRaised = Color3.fromRGB(30, 34, 44),
+        Accent = Color3.fromRGB(229, 233, 240),
+        AccentDark = Color3.fromRGB(77, 85, 98),
+        Text = Color3.fromRGB(233, 236, 242),
+        Muted = Color3.fromRGB(139, 147, 163),
+        Success = Color3.fromRGB(232, 236, 243),
         Danger = Color3.fromRGB(232, 104, 122),
-        Stroke = Color3.fromRGB(121, 177, 216),
-        StrokeSoft = Color3.fromRGB(69, 112, 148),
-        Glow = Color3.fromRGB(94, 207, 255),
+        Stroke = Color3.fromRGB(86, 95, 112),
+        StrokeSoft = Color3.fromRGB(54, 61, 74),
+        Glow = Color3.fromRGB(63, 79, 105),
     },
     Config = {
         Folder = HUB_NAME .. "/Configs",
@@ -1064,15 +1064,15 @@ function Library:CreateWindow(opts)
         Position = UDim2.fromScale(0.5, 0.5),
         Size = UDim2.new(size.X.Scale, size.X.Offset + 50, size.Y.Scale, size.Y.Offset + 54),
         BackgroundColor3 = self.Theme.Glow,
-        BackgroundTransparency = 0.95,
+        BackgroundTransparency = 0.97,
         BorderSizePixel = 0,
         ZIndex = 0,
     }, root)
     corner(mainGlow, 22)
     gradient(mainGlow, {
-        Color3.fromRGB(36, 120, 188),
         self.Theme.Glow,
-        Color3.fromRGB(18, 76, 128),
+        self.Theme.SurfaceRaised,
+        self.Theme.SurfaceDeep,
     }, 35)
 
     local main = create("Frame", {
@@ -1111,104 +1111,72 @@ function Library:CreateWindow(opts)
         end
     end)
 
-    local topHeight = isMobile and 62 or 56
-    local tabBarHeight = isMobile and 44 or 40
+    local topHeight = isMobile and 42 or 38
 
     local topbar = create("Frame", {
         Size = UDim2.new(1, 0, 0, topHeight),
-        BackgroundColor3 = self.Theme.Surface,
+        BackgroundColor3 = self.Theme.SurfaceDeep,
         BorderSizePixel = 0,
         ZIndex = 4,
     }, main)
-    gradient(topbar, {
-        self.Theme.SurfaceRaised,
-        self.Theme.Surface,
-        self.Theme.SurfaceDeep,
-    }, 12)
-
-    local topAccent = create("Frame", {
-        Size = UDim2.new(1, 0, 0, 2),
-        Position = UDim2.new(0, 0, 1, -2),
-        BackgroundColor3 = self.Theme.Accent,
-        BackgroundTransparency = 0.2,
-        BorderSizePixel = 0,
-        ZIndex = 5,
-    }, topbar)
-    gradient(topAccent, {
-        self.Theme.AccentDark,
-        self.Theme.Accent,
-        Color3.fromRGB(158, 233, 255),
-    }, 0)
+    stroke(topbar, self.Theme.StrokeSoft, 0.58, 1)
 
     create("UIPadding", {
-        PaddingLeft = UDim.new(0, 16),
-        PaddingRight = UDim.new(0, 16),
-        PaddingTop = UDim.new(0, 9),
-        PaddingBottom = UDim.new(0, 9),
+        PaddingLeft = UDim.new(0, 12),
+        PaddingRight = UDim.new(0, 10),
+        PaddingTop = UDim.new(0, 6),
+        PaddingBottom = UDim.new(0, 6),
     }, topbar)
 
     create("TextLabel", {
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -100, 0, 22),
-        Text = opts.Title or "Xero Hub - GPO",
+        Size = UDim2.new(1, -74, 1, 0),
+        Text = opts.Subtitle or "Hub Interface",
         TextXAlignment = Enum.TextXAlignment.Left,
         TextColor3 = self.Theme.Text,
-        Font = Enum.Font.GothamBold,
-        TextSize = isMobile and 17 or 18,
-        ZIndex = 5,
-    }, topbar)
-
-    create("TextLabel", {
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0, 22),
-        Size = UDim2.new(1, -100, 0, 16),
-        Text = opts.Subtitle or "Blue Water Samurai UI - mobile-ready, searchable, auto-config",
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextColor3 = self.Theme.Muted,
-        Font = Enum.Font.GothamMedium,
-        TextSize = isMobile and 12 or 13,
+        Font = Enum.Font.GothamSemibold,
+        TextSize = isMobile and 13 or 12,
+        TextTruncate = Enum.TextTruncate.AtEnd,
         ZIndex = 5,
     }, topbar)
 
     local buttons = create("Frame", {
         BackgroundTransparency = 1,
-        Size = UDim2.new(0, 92, 1, 0),
-        Position = UDim2.new(1, -92, 0, 0),
+        Size = UDim2.new(0, 64, 1, 0),
+        Position = UDim2.new(1, -64, 0, 0),
         ZIndex = 5,
     }, topbar)
     create("UIListLayout", {
         FillDirection = Enum.FillDirection.Horizontal,
         HorizontalAlignment = Enum.HorizontalAlignment.Right,
         VerticalAlignment = Enum.VerticalAlignment.Center,
-        Padding = UDim.new(0, 7),
+        Padding = UDim.new(0, 6),
     }, buttons)
 
     local function topButton(text, kind)
-        local baseBg = self.Theme.SurfaceDeep
+        local baseBg = self.Theme.Surface
         local baseText = self.Theme.Muted
         local hoverBg = self.Theme.SurfaceAlt
         local hoverText = self.Theme.Text
 
         if kind == "close" then
-            hoverBg = Color3.fromRGB(52, 24, 31)
-            hoverText = Color3.fromRGB(255, 220, 228)
-        elseif kind == "min" then
-            hoverBg = Color3.fromRGB(24, 56, 84)
+            hoverBg = Color3.fromRGB(60, 30, 40)
+            hoverText = Color3.fromRGB(255, 223, 230)
         end
 
         local b = create("TextButton", {
             Text = text,
             AutoButtonColor = false,
-            Size = UDim2.fromOffset(isMobile and 34 or 30, isMobile and 28 or 24),
+            Size = UDim2.fromOffset(isMobile and 28 or 24, isMobile and 24 or 22),
             BackgroundColor3 = baseBg,
             TextColor3 = baseText,
             Font = Enum.Font.GothamSemibold,
-            TextSize = isMobile and 14 or 12,
+            TextSize = isMobile and 13 or 11,
             BorderSizePixel = 0,
             ZIndex = 5,
         }, buttons)
-        corner(b, 7)
-        stroke(b, self.Theme.StrokeSoft, 0.62, 1)
+        corner(b, 6)
+        stroke(b, self.Theme.StrokeSoft, 0.6, 1)
         bindHover(b, {
             BackgroundColor3 = hoverBg,
             TextColor3 = hoverText,
@@ -1222,46 +1190,114 @@ function Library:CreateWindow(opts)
     local minBtn = topButton("-", "min")
     local closeBtn = topButton("x", "close")
 
-    local tabBar = create("ScrollingFrame", {
-        Position = UDim2.new(0, 0, 0, topHeight),
-        Size = UDim2.new(1, 0, 0, tabBarHeight),
+    local bodyY = topHeight
+    local body = create("Frame", {
+        Position = UDim2.new(0, 0, 0, bodyY),
+        Size = UDim2.new(1, 0, 1, -bodyY),
+        BackgroundColor3 = self.Theme.Background,
+        BorderSizePixel = 0,
+    }, main)
+
+    local sidebarWidth = isMobile and 150 or 190
+    local sidebar = create("Frame", {
+        Size = UDim2.new(0, sidebarWidth, 1, 0),
         BackgroundColor3 = self.Theme.SurfaceDeep,
         BorderSizePixel = 0,
-        ScrollBarThickness = 0,
-        CanvasSize = UDim2.new(),
-        ScrollingDirection = Enum.ScrollingDirection.X,
-        ZIndex = 4,
-    }, main)
-    gradient(tabBar, {
+    }, body)
+    stroke(sidebar, self.Theme.StrokeSoft, 0.6, 1)
+    gradient(sidebar, {
         self.Theme.SurfaceDeep,
         self.Theme.Surface,
     }, 90)
 
     create("UIPadding", {
-        PaddingLeft = UDim.new(0, 11),
-        PaddingRight = UDim.new(0, 11),
-        PaddingTop = UDim.new(0, 7),
-        PaddingBottom = UDim.new(0, 7),
-    }, tabBar)
+        PaddingLeft = UDim.new(0, 10),
+        PaddingRight = UDim.new(0, 10),
+        PaddingTop = UDim.new(0, 10),
+        PaddingBottom = UDim.new(0, 10),
+    }, sidebar)
+
+    create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 20),
+        Text = opts.Title or "Absence",
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextColor3 = self.Theme.Text,
+        Font = Enum.Font.GothamBold,
+        TextSize = isMobile and 16 or 15,
+    }, sidebar)
+
+    create("TextLabel", {
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 0, 0, 20),
+        Size = UDim2.new(1, 0, 0, 14),
+        Text = opts.Subtitle or "Beta Version",
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextColor3 = self.Theme.Muted,
+        Font = Enum.Font.GothamMedium,
+        TextSize = isMobile and 11 or 10,
+        TextTruncate = Enum.TextTruncate.AtEnd,
+    }, sidebar)
+
+    create("Frame", {
+        Position = UDim2.new(0, 0, 0, 40),
+        Size = UDim2.new(1, 0, 0, 1),
+        BackgroundColor3 = self.Theme.StrokeSoft,
+        BackgroundTransparency = 0.2,
+        BorderSizePixel = 0,
+    }, sidebar)
+
+    local tabBar = create("ScrollingFrame", {
+        Position = UDim2.new(0, 0, 0, 48),
+        Size = UDim2.new(1, 0, 1, -48),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ScrollBarThickness = isMobile and 2 or 3,
+        ScrollBarImageColor3 = self.Theme.StrokeSoft,
+        CanvasSize = UDim2.new(),
+        ScrollingDirection = Enum.ScrollingDirection.Y,
+        ZIndex = 4,
+    }, sidebar)
 
     local tabLayout = create("UIListLayout", {
-        FillDirection = Enum.FillDirection.Horizontal,
+        FillDirection = Enum.FillDirection.Vertical,
         HorizontalAlignment = Enum.HorizontalAlignment.Left,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
-        Padding = UDim.new(0, 8),
+        VerticalAlignment = Enum.VerticalAlignment.Top,
+        Padding = UDim.new(0, 6),
     }, tabBar)
 
-    local bodyY = topHeight + tabBarHeight
-    local body = create("Frame", {
-        Position = UDim2.new(0, 0, 0, bodyY),
-        Size = UDim2.new(1, 0, 1, -bodyY),
-        BackgroundTransparency = 1,
-    }, main)
-
-    local pages = create("Frame", {
-        Size = UDim2.fromScale(1, 1),
+    local contentPad = isMobile and 8 or 10
+    local content = create("Frame", {
+        Position = UDim2.new(0, sidebarWidth + contentPad, 0, contentPad),
+        Size = UDim2.new(1, -(sidebarWidth + contentPad * 2), 1, -(contentPad * 2)),
         BackgroundTransparency = 1,
     }, body)
+
+    local contentHeaderH = isMobile and 28 or 26
+    local contentHeader = create("Frame", {
+        Size = UDim2.new(1, 0, 0, contentHeaderH),
+        BackgroundColor3 = self.Theme.SurfaceDeep,
+        BorderSizePixel = 0,
+    }, content)
+    corner(contentHeader, 8)
+    stroke(contentHeader, self.Theme.StrokeSoft, 0.58, 1)
+
+    local contentHeaderLabel = create("TextLabel", {
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 10, 0, 0),
+        Size = UDim2.new(1, -20, 1, 0),
+        Text = "Overview",
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextColor3 = self.Theme.Text,
+        Font = Enum.Font.GothamSemibold,
+        TextSize = isMobile and 12 or 11,
+    }, contentHeader)
+
+    local pages = create("Frame", {
+        Position = UDim2.new(0, 0, 0, contentHeaderH + 8),
+        Size = UDim2.new(1, 0, 1, -(contentHeaderH + 8)),
+        BackgroundTransparency = 1,
+    }, content)
 
     local notifyHolder = create("Frame", {
         Size = UDim2.fromOffset(isMobile and 280 or 330, 220),
@@ -1283,6 +1319,8 @@ function Library:CreateWindow(opts)
         MainShadow = mainShadow,
         MainGlow = mainGlow,
         Body = body,
+        Sidebar = sidebar,
+        ContentHeaderLabel = contentHeaderLabel,
         Tabs = {},
         ActiveTab = nil,
         IsMobile = isMobile,
@@ -1295,7 +1333,7 @@ function Library:CreateWindow(opts)
     }
 
     local function updateTabCanvas()
-        tabBar.CanvasSize = UDim2.new(0, tabLayout.AbsoluteContentSize.X + 18, 0, 0)
+        tabBar.CanvasSize = UDim2.new(0, 0, 0, tabLayout.AbsoluteContentSize.Y + 12)
     end
     connect(tabLayout:GetPropertyChangedSignal("AbsoluteContentSize"), updateTabCanvas)
     updateTabCanvas()
@@ -1343,22 +1381,34 @@ function Library:CreateWindow(opts)
     function window:SelectTab(tab)
         for _, t in ipairs(self.Tabs) do
             local active = (t == tab)
+            t.IsActive = active
             t.Page.Visible = active
-            local targetBg = active and self.Library.Theme.SurfaceRaised or self.Library.Theme.SurfaceAlt
+            local targetBg = active and self.Library.Theme.SurfaceRaised or self.Library.Theme.Surface
             tween(t.Button, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                 BackgroundColor3 = targetBg,
             })
+            local label = t.Button:FindFirstChildOfClass("TextLabel")
+            if label then
+                label.TextColor3 = active and self.Library.Theme.Text or self.Library.Theme.Muted
+                label.Font = active and Enum.Font.GothamSemibold or Enum.Font.GothamMedium
+            end
+            local dot = t.Button:FindFirstChild("TabDot")
+            if dot and dot:IsA("Frame") then
+                dot.BackgroundColor3 = active and self.Library.Theme.Accent or self.Library.Theme.Muted
+            end
             if t.Stroke then
                 t.Stroke.Color = active and self.Library.Theme.Accent or self.Library.Theme.StrokeSoft
-                t.Stroke.Transparency = active and 0.28 or 0.62
-                t.Stroke.Thickness = active and 1.2 or 1
+                t.Stroke.Transparency = active and 0.42 or 0.64
+                t.Stroke.Thickness = 1
             end
-            if t.AccentLine then
-                tween(t.AccentLine, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                    BackgroundTransparency = active and 0.08 or 1,
-                    Size = active and UDim2.new(0.64, 0, 0, 2) or UDim2.new(0.18, 0, 0, 2),
+            if t.ActiveStrip then
+                tween(t.ActiveStrip, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    BackgroundTransparency = active and 0 or 1,
                 })
             end
+        end
+        if self.ContentHeaderLabel then
+            self.ContentHeaderLabel.Text = tostring(tab and tab.Name or "Overview")
         end
         self.ActiveTab = tab
     end
@@ -1440,39 +1490,46 @@ function Library:CreateWindow(opts)
         name = tostring(name or "Tab")
 
         local button = create("TextButton", {
-            Text = name,
+            Text = "",
             AutoButtonColor = false,
-            Size = UDim2.fromOffset(self.IsMobile and 126 or 116, self.IsMobile and 32 or 28),
-            BackgroundColor3 = self.Library.Theme.SurfaceAlt,
-            TextColor3 = self.Library.Theme.Text,
+            Size = UDim2.new(1, 0, 0, self.IsMobile and 34 or 32),
+            BackgroundColor3 = self.Library.Theme.Surface,
             BorderSizePixel = 0,
-            Font = Enum.Font.GothamSemibold,
-            TextSize = self.IsMobile and 14 or 13,
             ZIndex = 5,
         }, tabBar)
-        corner(button, 8)
-        local tabStroke = stroke(button, self.Library.Theme.StrokeSoft, 0.6, 1)
-        gradient(button, {
-            self.Library.Theme.SurfaceAlt,
-            self.Library.Theme.SurfaceRaised,
-        }, 90)
+        corner(button, 7)
+        local tabStroke = stroke(button, self.Library.Theme.StrokeSoft, 0.64, 1)
 
-        local accentLine = create("Frame", {
-            AnchorPoint = Vector2.new(0.5, 1),
-            Position = UDim2.new(0.5, 0, 1, -2),
-            Size = UDim2.new(0.18, 0, 0, 2),
+        local activeStrip = create("Frame", {
+            Size = UDim2.new(0, 2, 1, -10),
+            Position = UDim2.new(0, 4, 0, 5),
             BackgroundColor3 = self.Library.Theme.Accent,
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             ZIndex = 6,
         }, button)
-        corner(accentLine, 999)
+        corner(activeStrip, 999)
 
-        bindHover(button, {
-            BackgroundColor3 = self.Library.Theme.SurfaceRaised,
-        }, {
-            BackgroundColor3 = self.Library.Theme.SurfaceAlt,
-        }, 0.12)
+        create("Frame", {
+            Name = "TabDot",
+            Size = UDim2.fromOffset(4, 4),
+            Position = UDim2.new(0, 10, 0.5, -2),
+            BackgroundColor3 = self.Library.Theme.Muted,
+            BorderSizePixel = 0,
+            ZIndex = 6,
+        }, button)
+
+        create("TextLabel", {
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 16, 0, 0),
+            Size = UDim2.new(1, -22, 1, 0),
+            Text = name,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextColor3 = self.Library.Theme.Muted,
+            Font = Enum.Font.GothamMedium,
+            TextSize = self.IsMobile and 13 or 12,
+            ZIndex = 6,
+        }, button)
 
         local page = create("ScrollingFrame", {
             Size = UDim2.fromScale(1, 1),
@@ -1481,34 +1538,109 @@ function Library:CreateWindow(opts)
             ScrollBarThickness = self.IsMobile and 4 or 5,
             ScrollBarImageColor3 = self.Library.Theme.StrokeSoft,
             CanvasSize = UDim2.new(0, 0, 0, 0),
+            ScrollingDirection = Enum.ScrollingDirection.Y,
             Visible = false,
         }, pages)
 
         create("UIPadding", {
-            PaddingLeft = UDim.new(0, self.IsMobile and 9 or 12),
-            PaddingRight = UDim.new(0, self.IsMobile and 9 or 12),
-            PaddingTop = UDim.new(0, self.IsMobile and 9 or 12),
-            PaddingBottom = UDim.new(0, self.IsMobile and 9 or 12),
+            PaddingLeft = UDim.new(0, self.IsMobile and 0 or 0),
+            PaddingRight = UDim.new(0, self.IsMobile and 0 or 0),
+            PaddingTop = UDim.new(0, 0),
+            PaddingBottom = UDim.new(0, 0),
         }, page)
 
-        local pageLayout = create("UIListLayout", {
-            Padding = UDim.new(0, self.IsMobile and 9 or 10),
-            SortOrder = Enum.SortOrder.LayoutOrder,
+        local columnsHolder = create("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
         }, page)
 
-        connect(pageLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
-            page.CanvasSize = UDim2.new(0, 0, 0, pageLayout.AbsoluteContentSize.Y + 20)
-        end)
+        local columnCount = self.IsMobile and 1 or 3
+        local columnGap = self.IsMobile and 8 or 10
+        local columns = {}
+        local columnLayouts = {}
+
+        local function updatePageCanvas()
+            local maxY = 0
+            for _, layoutObj in ipairs(columnLayouts) do
+                maxY = math.max(maxY, layoutObj.AbsoluteContentSize.Y)
+            end
+            page.CanvasSize = UDim2.new(0, 0, 0, maxY + 14)
+        end
+
+        local function updateColumnWidths()
+            local availableWidth = page.AbsoluteSize.X
+            if availableWidth <= 0 then
+                return
+            end
+
+            local cardWidth
+            if #columns == 1 then
+                cardWidth = availableWidth
+            else
+                cardWidth = math.floor((availableWidth - columnGap) / #columns)
+            end
+            cardWidth = math.max(110, cardWidth)
+
+            local totalWidth = (cardWidth * #columns) + (columnGap * (#columns - 1))
+            columnsHolder.Size = UDim2.new(0, totalWidth, 0, 0)
+            columnsHolder.Position = UDim2.new(0, 0, 0, 0)
+
+            local x = 0
+            for _, column in ipairs(columns) do
+                column.Size = UDim2.new(0, cardWidth, 0, 0)
+                column.Position = UDim2.new(0, x, 0, 0)
+                x += cardWidth + columnGap
+            end
+
+            updatePageCanvas()
+        end
+
+        for i = 1, columnCount do
+            local column = create("Frame", {
+                BackgroundTransparency = 1,
+                AutomaticSize = Enum.AutomaticSize.Y,
+                Size = UDim2.new(0, 120, 0, 0),
+                Position = UDim2.new(0, 0, 0, 0),
+            }, columnsHolder)
+
+            local colLayout = create("UIListLayout", {
+                Padding = UDim.new(0, columnGap),
+                SortOrder = Enum.SortOrder.LayoutOrder,
+            }, column)
+
+            connect(colLayout:GetPropertyChangedSignal("AbsoluteContentSize"), updatePageCanvas)
+            table.insert(columns, column)
+            table.insert(columnLayouts, colLayout)
+        end
+
+        connect(page:GetPropertyChangedSignal("AbsoluteSize"), updateColumnWidths)
+        task.defer(updateColumnWidths)
 
         local tab = {
             Name = name,
             Window = self,
             Button = button,
             Stroke = tabStroke,
-            AccentLine = accentLine,
+            ActiveStrip = activeStrip,
             Page = page,
+            Columns = columns,
+            ColumnLayouts = columnLayouts,
+            IsActive = false,
+            _nextColumn = 1,
             Order = 0,
         }
+
+        connect(button.MouseEnter, function()
+            if not tab.IsActive then
+                button.BackgroundColor3 = self.Library.Theme.SurfaceAlt
+            end
+        end)
+        connect(button.MouseLeave, function()
+            if not tab.IsActive then
+                button.BackgroundColor3 = self.Library.Theme.Surface
+            end
+        end)
 
         local function nextOrder()
             tab.Order += 1
@@ -1517,6 +1649,8 @@ function Library:CreateWindow(opts)
 
         function tab:AddSection(title)
             title = tostring(title or "Section")
+            local targetColumn = self.Columns[self._nextColumn] or self.Columns[1]
+            self._nextColumn = (self._nextColumn % #self.Columns) + 1
 
             local sec = create("Frame", {
                 BackgroundColor3 = self.Window.Library.Theme.Surface,
@@ -1524,43 +1658,38 @@ function Library:CreateWindow(opts)
                 Size = UDim2.new(1, 0, 0, 0),
                 AutomaticSize = Enum.AutomaticSize.Y,
                 LayoutOrder = nextOrder(),
-            }, self.Page)
-            corner(sec, 11)
-            stroke(sec, self.Window.Library.Theme.StrokeSoft, 0.58, 1)
-            gradient(sec, {
-                self.Window.Library.Theme.Surface,
-                self.Window.Library.Theme.SurfaceAlt,
-                self.Window.Library.Theme.SurfaceDeep,
-            }, 16)
+            }, targetColumn)
+            corner(sec, 9)
+            stroke(sec, self.Window.Library.Theme.StrokeSoft, 0.56, 1)
 
             create("UIPadding", {
-                PaddingLeft = UDim.new(0, self.Window.IsMobile and 11 or 13),
-                PaddingRight = UDim.new(0, self.Window.IsMobile and 11 or 13),
-                PaddingTop = UDim.new(0, 9),
-                PaddingBottom = UDim.new(0, 11),
+                PaddingLeft = UDim.new(0, self.Window.IsMobile and 9 or 10),
+                PaddingRight = UDim.new(0, self.Window.IsMobile and 9 or 10),
+                PaddingTop = UDim.new(0, 8),
+                PaddingBottom = UDim.new(0, 9),
             }, sec)
 
             create("TextLabel", {
                 BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 20),
+                Size = UDim2.new(1, 0, 0, 18),
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Text = title,
                 TextColor3 = self.Window.Library.Theme.Text,
-                Font = Enum.Font.GothamBold,
-                TextSize = self.Window.IsMobile and 14 or 14,
+                Font = Enum.Font.GothamSemibold,
+                TextSize = self.Window.IsMobile and 13 or 12,
             }, sec)
 
             create("Frame", {
-                BackgroundColor3 = self.Window.Library.Theme.Accent,
-                BackgroundTransparency = 0.1,
+                BackgroundColor3 = self.Window.Library.Theme.StrokeSoft,
+                BackgroundTransparency = 0.2,
                 BorderSizePixel = 0,
-                Size = UDim2.new(0.32, 0, 0, 2),
-                Position = UDim2.new(0, 0, 0, 25),
+                Size = UDim2.new(1, 0, 0, 1),
+                Position = UDim2.new(0, 0, 0, 21),
             }, sec)
 
             local controls = create("Frame", {
                 BackgroundTransparency = 1,
-                Position = UDim2.new(0, 0, 0, 30),
+                Position = UDim2.new(0, 0, 0, 26),
                 Size = UDim2.new(1, 0, 0, 0),
                 AutomaticSize = Enum.AutomaticSize.Y,
             }, sec)
@@ -1595,22 +1724,19 @@ function Library:CreateWindow(opts)
                     Text = tostring(text or "Button"),
                     AutoButtonColor = false,
                     Size = UDim2.fromScale(1, 1),
-                    BackgroundColor3 = self.Tab.Window.Library.Theme.AccentDark,
-                    TextColor3 = Color3.fromRGB(255, 255, 255),
-                    Font = Enum.Font.GothamSemibold,
-                    TextSize = self.Tab.Window.IsMobile and 14 or 13,
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceDeep,
+                    TextColor3 = self.Tab.Window.Library.Theme.Text,
+                    Font = Enum.Font.GothamMedium,
+                    TextSize = self.Tab.Window.IsMobile and 13 or 12,
+                    TextXAlignment = Enum.TextXAlignment.Left,
                     BorderSizePixel = 0,
                 }, host)
-                corner(btn, 9)
-                stroke(btn, self.Tab.Window.Library.Theme.Stroke, 0.38, 1.05)
-                gradient(btn, {
-                    self.Tab.Window.Library.Theme.AccentDark,
-                    self.Tab.Window.Library.Theme.Accent,
-                }, 8)
+                corner(btn, 7)
+                stroke(btn, self.Tab.Window.Library.Theme.StrokeSoft, 0.56, 1)
                 bindHover(btn, {
-                    BackgroundColor3 = self.Tab.Window.Library.Theme.Accent,
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceAlt,
                 }, {
-                    BackgroundColor3 = self.Tab.Window.Library.Theme.AccentDark,
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceDeep,
                 }, 0.12)
                 connect(btn.MouseButton1Click, function()
                     safeCall(callback, btn)
@@ -2012,7 +2138,7 @@ function Library:CreateWindow(opts)
                 gradient(fill, {
                     self.Tab.Window.Library.Theme.AccentDark,
                     self.Tab.Window.Library.Theme.Accent,
-                    Color3.fromRGB(148, 229, 255),
+                    Color3.fromRGB(242, 244, 248),
                 }, 0)
 
                 local knobSize = self.Tab.Window.IsMobile and 16 or 14
