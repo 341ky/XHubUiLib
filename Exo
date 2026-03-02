@@ -11,6 +11,7 @@ local HUB_SHORT = "xero"
 local UI_NAME_PREFIX = "XeroHubUI_"
 local UI_MANAGED_ATTR = "XeroHubManaged"
 local UI_ACTIVE_KEY = "__XERO_HUB_ACTIVE_GUI"
+local ACTOR_BOOTSTRAP_ENABLED = env.__XERO_UI_ENABLE_ACTOR_BOOTSTRAP == true
 
 env.Toggles = env.Toggles or {}
 env.Options = env.Options or {}
@@ -140,6 +141,9 @@ local function detectBootstrapSource()
 end
 
 local function tryBootstrapOnActor()
+    if not ACTOR_BOOTSTRAP_ENABLED then
+        return false
+    end
     if env.__XERO_UI_ACTOR_RUNNING == true then
         return false
     end
@@ -1131,7 +1135,7 @@ function Library:CreateWindow(opts)
         IsMobile = isMobile,
         Minimized = false,
         ExpandedSize = size,
-        ToggleKeybind = opts.ToggleKeybind or Enum.KeyCode.RightShift,
+        ToggleKeybind = opts.ToggleKeybind or Enum.KeyCode.RightControl,
         _dropdownEntries = {},
         PreloadedProfiles = (type(opts.PreloadedProfiles) == "table" and deepCopy(opts.PreloadedProfiles))
             or { "Default" },
