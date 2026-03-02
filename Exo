@@ -1133,6 +1133,8 @@ function Library:CreateWindow(opts)
         ExpandedSize = size,
         ToggleKeybind = opts.ToggleKeybind or Enum.KeyCode.RightShift,
         _dropdownEntries = {},
+        PreloadedProfiles = (type(opts.PreloadedProfiles) == "table" and deepCopy(opts.PreloadedProfiles))
+            or { "Default" },
     }
 
     local function updateTabCanvas()
@@ -2477,6 +2479,34 @@ function Library:CreateWindow(opts)
         local configSection = settingsTab:AddSection("Config Profiles")
         local behaviorSection = settingsTab:AddSection("Config Behavior")
 
+        local function buildProfileList()
+            local seen = {}
+            local out = {}
+
+            local function addProfile(name)
+                if type(name) ~= "string" then
+                    return
+                end
+                local clean = sanitizeName(name)
+                if clean == "" or seen[clean] then
+                    return
+                end
+                seen[clean] = true
+                table.insert(out, clean)
+            end
+
+            for _, name in ipairs(self.PreloadedProfiles or {}) do
+                addProfile(name)
+            end
+            addProfile(self.Library.Config.Profile)
+            for _, name in ipairs(self.Library:ListConfigs()) do
+                addProfile(name)
+            end
+
+            table.sort(out)
+            return out
+        end
+
         local profileInput = configSection:AddInput("__xero_ui_profile_input", {
             Text = "Profile Name",
             Default = self.Library.Config.Profile,
@@ -2485,7 +2515,7 @@ function Library:CreateWindow(opts)
 
         local profilesDropdown = configSection:AddDropdown("__xero_ui_profiles_list", {
             Text = "Saved Profiles",
-            Values = self.Library:ListConfigs(),
+            Values = buildProfileList(),
             Search = true,
             AllowNone = true,
             Placeholder = "None",
@@ -2493,7 +2523,7 @@ function Library:CreateWindow(opts)
 
         local function refreshProfiles(keepSelection)
             local selected = profilesDropdown.Value
-            profilesDropdown:SetValues(self.Library:ListConfigs(), keepSelection ~= false)
+            profilesDropdown:SetValues(buildProfileList(), keepSelection ~= false)
             if keepSelection and selected ~= nil then
                 profilesDropdown:SetValue(selected, true)
             end
@@ -2510,6 +2540,16 @@ function Library:CreateWindow(opts)
                 typed = "default"
             end
             self.Library.Config.Profile = typed
+            local exists = false
+            for _, name in ipairs(self.PreloadedProfiles) do
+                if name == typed then
+                    exists = true
+                    break
+                end
+            end
+            if not exists then
+                table.insert(self.PreloadedProfiles, typed)
+            end
             profileInput:SetValue(typed, true)
             profilesDropdown:SetValue(typed, true)
             self.Library:Notify("Active profile: " .. typed, 2)
