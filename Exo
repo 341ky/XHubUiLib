@@ -401,13 +401,28 @@ local function create(className, props, parent)
     return obj
 end
 
+local connect
+
 local function corner(parent, r)
     return create("UICorner", { CornerRadius = UDim.new(0, r or 8) }, parent)
 end
 
+local PURE_WHITE = Color3.fromRGB(255, 255, 255)
+
+local function isNearlyWhite(color)
+    if typeof(color) ~= "Color3" then
+        return false
+    end
+    return color.R >= 0.98 and color.G >= 0.98 and color.B >= 0.98
+end
+
 local function stroke(parent, color, tr, thick)
+    local nextColor = color or PURE_WHITE
+    if isNearlyWhite(nextColor) then
+        nextColor = Color3.fromRGB(160, 204, 235)
+    end
     return create("UIStroke", {
-        Color = color or Color3.fromRGB(255, 255, 255),
+        Color = nextColor,
         Transparency = tr == nil and 0.85 or tr,
         Thickness = thick or 1,
     }, parent)
@@ -423,6 +438,31 @@ local function gradient(parent, colors, rotation)
         Color = ColorSequence.new(keypoints),
         Rotation = rotation or 0,
     }, parent)
+end
+
+local function tween(target, tweenInfo, props)
+    local ok, tweenObj = pcall(TweenService.Create, TweenService, target, tweenInfo, props)
+    if ok and tweenObj then
+        tweenObj:Play()
+        return tweenObj
+    end
+    return nil
+end
+
+local function bindHover(guiObject, enterProps, leaveProps, duration)
+    if typeof(guiObject) ~= "Instance" or not guiObject:IsA("GuiObject") then
+        return
+    end
+    if not UserInputService.MouseEnabled then
+        return
+    end
+    local d = duration or 0.14
+    connect(guiObject.MouseEnter, function()
+        tween(guiObject, TweenInfo.new(d, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), enterProps)
+    end)
+    connect(guiObject.MouseLeave, function()
+        tween(guiObject, TweenInfo.new(d, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), leaveProps)
+    end)
 end
 
 local function guiParent()
@@ -442,7 +482,7 @@ local function guiParent()
 end
 
 local Library = {
-    Version = "1.0.0",
+    Version = "1.1.0",
     Toggles = env.Toggles,
     Options = env.Options,
     Flags = env.Flags,
@@ -455,15 +495,20 @@ local Library = {
     _window = nil,
     _notifyHolder = nil,
     Theme = {
-        Background = Color3.fromRGB(8, 22, 38),
-        Surface = Color3.fromRGB(12, 31, 52),
-        SurfaceAlt = Color3.fromRGB(20, 47, 74),
-        Accent = Color3.fromRGB(84, 201, 255),
-        AccentDark = Color3.fromRGB(36, 127, 198),
-        Text = Color3.fromRGB(230, 243, 255),
-        Muted = Color3.fromRGB(134, 164, 194),
-        Success = Color3.fromRGB(88, 211, 186),
+        Background = Color3.fromRGB(5, 15, 29),
+        Surface = Color3.fromRGB(9, 30, 50),
+        SurfaceAlt = Color3.fromRGB(17, 44, 69),
+        SurfaceDeep = Color3.fromRGB(4, 20, 36),
+        SurfaceRaised = Color3.fromRGB(24, 58, 87),
+        Accent = Color3.fromRGB(97, 214, 255),
+        AccentDark = Color3.fromRGB(34, 141, 214),
+        Text = Color3.fromRGB(233, 245, 255),
+        Muted = Color3.fromRGB(140, 174, 205),
+        Success = Color3.fromRGB(103, 217, 196),
         Danger = Color3.fromRGB(232, 104, 122),
+        Stroke = Color3.fromRGB(121, 177, 216),
+        StrokeSoft = Color3.fromRGB(69, 112, 148),
+        Glow = Color3.fromRGB(94, 207, 255),
     },
     Config = {
         Folder = HUB_NAME .. "/Configs",
@@ -475,7 +520,7 @@ local Library = {
     },
 }
 
-local function connect(signal, fn)
+connect = function(signal, fn)
     local conn = signal:Connect(function(...)
         local ok, err = pcall(fn, ...)
         if not ok then
@@ -784,13 +829,25 @@ function Library:Notify(message, duration)
         BorderSizePixel = 0,
         Size = UDim2.new(1, 0, 0, 0),
     }, self._notifyHolder)
-    corner(toast, 8)
-    stroke(toast, self.Theme.Accent, 0.45, 1.2)
+    corner(toast, 10)
+    stroke(toast, self.Theme.Stroke, 0.36, 1.15)
+    gradient(toast, {
+        self.Theme.Surface,
+        self.Theme.SurfaceAlt,
+    }, 12)
+
+    local accentBar = create("Frame", {
+        Size = UDim2.new(0, 3, 1, -8),
+        Position = UDim2.new(0, 4, 0, 4),
+        BackgroundColor3 = self.Theme.Accent,
+        BorderSizePixel = 0,
+    }, toast)
+    corner(accentBar, 999)
 
     local label = create("TextLabel", {
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 8, 0, 6),
-        Size = UDim2.new(1, -16, 1, -12),
+        Position = UDim2.new(0, 13, 0, 6),
+        Size = UDim2.new(1, -21, 1, -12),
         TextWrapped = true,
         TextXAlignment = Enum.TextXAlignment.Left,
         Text = tostring(message),
@@ -984,8 +1041,45 @@ function Library:CreateWindow(opts)
 
     local root = create("Frame", {
         Size = UDim2.fromScale(1, 1),
-        BackgroundTransparency = 1,
+        BackgroundColor3 = self.Theme.Background,
+        BackgroundTransparency = 0.08,
     }, gui)
+    gradient(root, {
+        Color3.fromRGB(2, 10, 18),
+        self.Theme.Background,
+        Color3.fromRGB(2, 8, 15),
+    }, 70)
+
+    local ambience = create("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.fromScale(0.5, 0.52),
+        Size = UDim2.new(1.35, 0, 1.35, 0),
+        BackgroundColor3 = self.Theme.Glow,
+        BackgroundTransparency = 0.92,
+        BorderSizePixel = 0,
+        ZIndex = 0,
+    }, root)
+    corner(ambience, 999)
+    gradient(ambience, {
+        Color3.fromRGB(34, 117, 186),
+        self.Theme.Glow,
+        Color3.fromRGB(18, 74, 128),
+    }, 42)
+
+    local mainShadow = create("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.new(size.X.Scale, size.X.Offset + 30, size.Y.Scale, size.Y.Offset + 34),
+        BackgroundColor3 = Color3.fromRGB(1, 8, 16),
+        BackgroundTransparency = 0.42,
+        BorderSizePixel = 0,
+        ZIndex = 1,
+    }, root)
+    corner(mainShadow, 20)
+    gradient(mainShadow, {
+        Color3.fromRGB(4, 20, 34),
+        Color3.fromRGB(1, 9, 18),
+    }, 90)
 
     local main = create("Frame", {
         AnchorPoint = Vector2.new(0.5, 0.5),
@@ -994,14 +1088,31 @@ function Library:CreateWindow(opts)
         BackgroundColor3 = self.Theme.Background,
         BorderSizePixel = 0,
         ClipsDescendants = true,
+        ZIndex = 2,
     }, root)
-    corner(main, 12)
-    stroke(main, self.Theme.Accent, 0.5, 1.4)
+    corner(main, 16)
+    stroke(main, self.Theme.Stroke, 0.34, 1.3)
     gradient(main, {
-        Color3.fromRGB(5, 28, 48),
+        self.Theme.SurfaceDeep,
         self.Theme.Background,
-        Color3.fromRGB(3, 13, 24),
-    }, 24)
+        self.Theme.Surface,
+    }, 20)
+
+    local mainInnerBorder = create("Frame", {
+        Size = UDim2.new(1, -2, 1, -2),
+        Position = UDim2.fromOffset(1, 1),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ZIndex = 3,
+    }, main)
+    corner(mainInnerBorder, 15)
+    stroke(mainInnerBorder, self.Theme.StrokeSoft, 0.72, 1)
+
+    connect(main:GetPropertyChangedSignal("Position"), function()
+        if mainShadow and mainShadow.Parent then
+            mainShadow.Position = main.Position
+        end
+    end)
 
     local topHeight = isMobile and 62 or 56
     local tabBarHeight = isMobile and 44 or 40
@@ -1010,85 +1121,114 @@ function Library:CreateWindow(opts)
         Size = UDim2.new(1, 0, 0, topHeight),
         BackgroundColor3 = self.Theme.Surface,
         BorderSizePixel = 0,
+        ZIndex = 4,
     }, main)
     gradient(topbar, {
-        Color3.fromRGB(18, 61, 96),
+        self.Theme.SurfaceRaised,
         self.Theme.Surface,
-        self.Theme.SurfaceAlt,
-    }, 10)
+        self.Theme.SurfaceDeep,
+    }, 12)
+
+    local topAccent = create("Frame", {
+        Size = UDim2.new(1, 0, 0, 2),
+        Position = UDim2.new(0, 0, 1, -2),
+        BackgroundColor3 = self.Theme.Accent,
+        BackgroundTransparency = 0.2,
+        BorderSizePixel = 0,
+        ZIndex = 5,
+    }, topbar)
+    gradient(topAccent, {
+        self.Theme.AccentDark,
+        self.Theme.Accent,
+        Color3.fromRGB(158, 233, 255),
+    }, 0)
 
     create("UIPadding", {
-        PaddingLeft = UDim.new(0, 14),
-        PaddingRight = UDim.new(0, 14),
+        PaddingLeft = UDim.new(0, 16),
+        PaddingRight = UDim.new(0, 16),
         PaddingTop = UDim.new(0, 9),
         PaddingBottom = UDim.new(0, 9),
     }, topbar)
 
     create("TextLabel", {
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -110, 0, 20),
+        Size = UDim2.new(1, -122, 0, 22),
         Text = opts.Title or "Xero Hub - GPO",
         TextXAlignment = Enum.TextXAlignment.Left,
         TextColor3 = self.Theme.Text,
         Font = Enum.Font.GothamBold,
-        TextSize = isMobile and 16 or 17,
+        TextSize = isMobile and 17 or 18,
+        ZIndex = 5,
     }, topbar)
 
     create("TextLabel", {
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 0, 0, 22),
-        Size = UDim2.new(1, -110, 0, 16),
+        Size = UDim2.new(1, -122, 0, 16),
         Text = opts.Subtitle or "Blue Water Samurai UI - mobile-ready, searchable, auto-config",
         TextXAlignment = Enum.TextXAlignment.Left,
         TextColor3 = self.Theme.Muted,
         Font = Enum.Font.GothamMedium,
         TextSize = isMobile and 12 or 13,
+        ZIndex = 5,
     }, topbar)
 
     local buttons = create("Frame", {
         BackgroundTransparency = 1,
-        Size = UDim2.new(0, 106, 1, 0),
-        Position = UDim2.new(1, -106, 0, 0),
+        Size = UDim2.new(0, 116, 1, 0),
+        Position = UDim2.new(1, -116, 0, 0),
+        ZIndex = 5,
     }, topbar)
     create("UIListLayout", {
         FillDirection = Enum.FillDirection.Horizontal,
         HorizontalAlignment = Enum.HorizontalAlignment.Right,
         VerticalAlignment = Enum.VerticalAlignment.Center,
-        Padding = UDim.new(0, 8),
+        Padding = UDim.new(0, 9),
     }, buttons)
 
-    local function topButton(text, bg)
+    local function topButton(text, bg, hoverBg)
         local b = create("TextButton", {
             Text = text,
             AutoButtonColor = false,
-            Size = UDim2.fromOffset(isMobile and 36 or 32, isMobile and 28 or 24),
+            Size = UDim2.fromOffset(isMobile and 38 or 34, isMobile and 30 or 26),
             BackgroundColor3 = bg,
             TextColor3 = Color3.fromRGB(255, 255, 255),
             Font = Enum.Font.GothamBold,
             TextSize = isMobile and 14 or 13,
             BorderSizePixel = 0,
+            ZIndex = 5,
         }, buttons)
-        corner(b, 7)
-        stroke(b, Color3.fromRGB(255, 255, 255), 0.86, 1)
+        corner(b, 8)
+        stroke(b, self.Theme.Stroke, 0.48, 1)
+        bindHover(b, {
+            BackgroundColor3 = hoverBg or bg,
+        }, {
+            BackgroundColor3 = bg,
+        }, 0.12)
         return b
     end
 
-    local minBtn = topButton("-", self.Theme.AccentDark)
-    local closeBtn = topButton("x", self.Theme.Danger)
+    local minBtn = topButton("-", self.Theme.SurfaceRaised, self.Theme.AccentDark)
+    local closeBtn = topButton("x", self.Theme.Danger, Color3.fromRGB(245, 124, 146))
 
     local tabBar = create("ScrollingFrame", {
         Position = UDim2.new(0, 0, 0, topHeight),
         Size = UDim2.new(1, 0, 0, tabBarHeight),
-        BackgroundColor3 = self.Theme.Surface,
+        BackgroundColor3 = self.Theme.SurfaceDeep,
         BorderSizePixel = 0,
         ScrollBarThickness = 0,
         CanvasSize = UDim2.new(),
         ScrollingDirection = Enum.ScrollingDirection.X,
+        ZIndex = 4,
     }, main)
+    gradient(tabBar, {
+        self.Theme.SurfaceDeep,
+        self.Theme.Surface,
+    }, 90)
 
     create("UIPadding", {
-        PaddingLeft = UDim.new(0, 10),
-        PaddingRight = UDim.new(0, 10),
+        PaddingLeft = UDim.new(0, 11),
+        PaddingRight = UDim.new(0, 11),
         PaddingTop = UDim.new(0, 7),
         PaddingBottom = UDim.new(0, 7),
     }, tabBar)
@@ -1129,6 +1269,7 @@ function Library:CreateWindow(opts)
         Library = self,
         Gui = gui,
         Main = main,
+        MainShadow = mainShadow,
         Body = body,
         Tabs = {},
         ActiveTab = nil,
@@ -1191,7 +1332,21 @@ function Library:CreateWindow(opts)
         for _, t in ipairs(self.Tabs) do
             local active = (t == tab)
             t.Page.Visible = active
-            t.Button.BackgroundColor3 = active and self.Library.Theme.AccentDark or self.Library.Theme.SurfaceAlt
+            local targetBg = active and self.Library.Theme.SurfaceRaised or self.Library.Theme.SurfaceAlt
+            tween(t.Button, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                BackgroundColor3 = targetBg,
+            })
+            if t.Stroke then
+                t.Stroke.Color = active and self.Library.Theme.Accent or self.Library.Theme.StrokeSoft
+                t.Stroke.Transparency = active and 0.28 or 0.62
+                t.Stroke.Thickness = active and 1.2 or 1
+            end
+            if t.AccentLine then
+                tween(t.AccentLine, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    BackgroundTransparency = active and 0.08 or 1,
+                    Size = active and UDim2.new(0.64, 0, 0, 2) or UDim2.new(0.18, 0, 0, 2),
+                })
+            end
         end
         self.ActiveTab = tab
     end
@@ -1201,9 +1356,20 @@ function Library:CreateWindow(opts)
         if state then
             body.Visible = false
             main.Size = UDim2.new(self.ExpandedSize.X.Scale, self.ExpandedSize.X.Offset, 0, bodyY + 4)
+            if self.MainShadow then
+                self.MainShadow.Size = UDim2.new(self.ExpandedSize.X.Scale, self.ExpandedSize.X.Offset + 30, 0, bodyY + 38)
+            end
         else
             body.Visible = true
             main.Size = self.ExpandedSize
+            if self.MainShadow then
+                self.MainShadow.Size = UDim2.new(
+                    self.ExpandedSize.X.Scale,
+                    self.ExpandedSize.X.Offset + 30,
+                    self.ExpandedSize.Y.Scale,
+                    self.ExpandedSize.Y.Offset + 34
+                )
+            end
         end
     end
 
@@ -1253,21 +1419,44 @@ function Library:CreateWindow(opts)
         local button = create("TextButton", {
             Text = name,
             AutoButtonColor = false,
-            Size = UDim2.fromOffset(self.IsMobile and 120 or 110, self.IsMobile and 30 or 26),
+            Size = UDim2.fromOffset(self.IsMobile and 126 or 116, self.IsMobile and 32 or 28),
             BackgroundColor3 = self.Library.Theme.SurfaceAlt,
             TextColor3 = self.Library.Theme.Text,
             BorderSizePixel = 0,
             Font = Enum.Font.GothamSemibold,
             TextSize = self.IsMobile and 14 or 13,
+            ZIndex = 5,
         }, tabBar)
-        corner(button, 7)
-        stroke(button, Color3.fromRGB(255, 255, 255), 0.88, 1)
+        corner(button, 8)
+        local tabStroke = stroke(button, self.Library.Theme.StrokeSoft, 0.6, 1)
+        gradient(button, {
+            self.Library.Theme.SurfaceAlt,
+            self.Library.Theme.SurfaceRaised,
+        }, 90)
+
+        local accentLine = create("Frame", {
+            AnchorPoint = Vector2.new(0.5, 1),
+            Position = UDim2.new(0.5, 0, 1, -2),
+            Size = UDim2.new(0.18, 0, 0, 2),
+            BackgroundColor3 = self.Library.Theme.Accent,
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            ZIndex = 6,
+        }, button)
+        corner(accentLine, 999)
+
+        bindHover(button, {
+            BackgroundColor3 = self.Library.Theme.SurfaceRaised,
+        }, {
+            BackgroundColor3 = self.Library.Theme.SurfaceAlt,
+        }, 0.12)
 
         local page = create("ScrollingFrame", {
             Size = UDim2.fromScale(1, 1),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             ScrollBarThickness = self.IsMobile and 4 or 5,
+            ScrollBarImageColor3 = self.Library.Theme.StrokeSoft,
             CanvasSize = UDim2.new(0, 0, 0, 0),
             Visible = false,
         }, pages)
@@ -1292,6 +1481,8 @@ function Library:CreateWindow(opts)
             Name = name,
             Window = self,
             Button = button,
+            Stroke = tabStroke,
+            AccentLine = accentLine,
             Page = page,
             Order = 0,
         }
@@ -1311,15 +1502,19 @@ function Library:CreateWindow(opts)
                 AutomaticSize = Enum.AutomaticSize.Y,
                 LayoutOrder = nextOrder(),
             }, self.Page)
-            corner(sec, 9)
-            stroke(sec, Color3.fromRGB(255, 255, 255), 0.9, 1)
-            gradient(sec, { self.Window.Library.Theme.Surface, self.Window.Library.Theme.SurfaceAlt }, 15)
+            corner(sec, 11)
+            stroke(sec, self.Window.Library.Theme.StrokeSoft, 0.58, 1)
+            gradient(sec, {
+                self.Window.Library.Theme.Surface,
+                self.Window.Library.Theme.SurfaceAlt,
+                self.Window.Library.Theme.SurfaceDeep,
+            }, 16)
 
             create("UIPadding", {
-                PaddingLeft = UDim.new(0, self.Window.IsMobile and 10 or 12),
-                PaddingRight = UDim.new(0, self.Window.IsMobile and 10 or 12),
-                PaddingTop = UDim.new(0, 8),
-                PaddingBottom = UDim.new(0, 10),
+                PaddingLeft = UDim.new(0, self.Window.IsMobile and 11 or 13),
+                PaddingRight = UDim.new(0, self.Window.IsMobile and 11 or 13),
+                PaddingTop = UDim.new(0, 9),
+                PaddingBottom = UDim.new(0, 11),
             }, sec)
 
             create("TextLabel", {
@@ -1329,15 +1524,15 @@ function Library:CreateWindow(opts)
                 Text = title,
                 TextColor3 = self.Window.Library.Theme.Text,
                 Font = Enum.Font.GothamBold,
-                TextSize = self.Window.IsMobile and 14 or 13,
+                TextSize = self.Window.IsMobile and 14 or 14,
             }, sec)
 
             create("Frame", {
-                BackgroundColor3 = self.Window.Library.Theme.AccentDark,
-                BackgroundTransparency = 0.3,
+                BackgroundColor3 = self.Window.Library.Theme.Accent,
+                BackgroundTransparency = 0.1,
                 BorderSizePixel = 0,
-                Size = UDim2.new(1, 0, 0, 1),
-                Position = UDim2.new(0, 0, 0, 24),
+                Size = UDim2.new(0.32, 0, 0, 2),
+                Position = UDim2.new(0, 0, 0, 25),
             }, sec)
 
             local controls = create("Frame", {
@@ -1349,7 +1544,7 @@ function Library:CreateWindow(opts)
 
             local controlsLayout = create("UIListLayout", {
                 SortOrder = Enum.SortOrder.LayoutOrder,
-                Padding = UDim.new(0, self.Window.IsMobile and 8 or 7),
+                Padding = UDim.new(0, self.Window.IsMobile and 9 or 8),
             }, controls)
 
             local section = {
@@ -1383,9 +1578,17 @@ function Library:CreateWindow(opts)
                     TextSize = self.Tab.Window.IsMobile and 14 or 13,
                     BorderSizePixel = 0,
                 }, host)
-                corner(btn, 8)
-                stroke(btn, Color3.fromRGB(255, 255, 255), 0.84, 1)
-                gradient(btn, { self.Tab.Window.Library.Theme.AccentDark, self.Tab.Window.Library.Theme.Accent }, 0)
+                corner(btn, 9)
+                stroke(btn, self.Tab.Window.Library.Theme.Stroke, 0.38, 1.05)
+                gradient(btn, {
+                    self.Tab.Window.Library.Theme.AccentDark,
+                    self.Tab.Window.Library.Theme.Accent,
+                }, 8)
+                bindHover(btn, {
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.Accent,
+                }, {
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.AccentDark,
+                }, 0.12)
                 connect(btn.MouseButton1Click, function()
                     safeCall(callback, btn)
                 end)
@@ -1418,11 +1621,11 @@ function Library:CreateWindow(opts)
                     Size = UDim2.fromOffset(switchWidth, switchHeight),
                     AnchorPoint = Vector2.new(1, 0.5),
                     Position = UDim2.new(1, 0, 0.5, 0),
-                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceAlt,
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceDeep,
                     BorderSizePixel = 0,
                 }, host)
                 corner(sw, 999)
-                stroke(sw, Color3.fromRGB(255, 255, 255), 0.86, 1)
+                stroke(sw, self.Tab.Window.Library.Theme.StrokeSoft, 0.5, 1)
 
                 local bindButton
                 if showKeybindButton then
@@ -1430,7 +1633,7 @@ function Library:CreateWindow(opts)
                         AutoButtonColor = false,
                         Position = UDim2.new(1, -(switchWidth + 8 + bindWidth), 0.5, -(bindHeight / 2)),
                         Size = UDim2.fromOffset(bindWidth, bindHeight),
-                        BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceAlt,
+                        BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceDeep,
                         BorderSizePixel = 0,
                         Text = "None",
                         TextColor3 = self.Tab.Window.Library.Theme.Text,
@@ -1438,14 +1641,19 @@ function Library:CreateWindow(opts)
                         TextSize = self.Tab.Window.IsMobile and 12 or 11,
                     }, host)
                     corner(bindButton, 7)
-                    stroke(bindButton, Color3.fromRGB(255, 255, 255), 0.9, 1)
+                    stroke(bindButton, self.Tab.Window.Library.Theme.StrokeSoft, 0.58, 1)
+                    bindHover(bindButton, {
+                        BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceAlt,
+                    }, {
+                        BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceDeep,
+                    }, 0.12)
                 end
 
                 local knobSize = self.Tab.Window.IsMobile and 20 or 18
                 local knob = create("Frame", {
                     Size = UDim2.fromOffset(knobSize, knobSize),
                     Position = UDim2.new(0, 2, 0.5, -(knobSize / 2)),
-                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                    BackgroundColor3 = Color3.fromRGB(226, 241, 255),
                     BorderSizePixel = 0,
                 }, sw)
                 corner(knob, 999)
@@ -1526,8 +1734,11 @@ function Library:CreateWindow(opts)
                     end
                     self.Value = v
 
-                    local targetX = v and (sw.AbsoluteSize.X - knob.AbsoluteSize.X - 2) or 2
-                    local bg = v and section.Tab.Window.Library.Theme.AccentDark or section.Tab.Window.Library.Theme.SurfaceAlt
+                    local trackWidth = (sw.AbsoluteSize.X > 0) and sw.AbsoluteSize.X or switchWidth
+                    local knobWidth = (knob.AbsoluteSize.X > 0) and knob.AbsoluteSize.X or knobSize
+                    local targetX = v and (trackWidth - knobWidth - 2) or 2
+                    local bg = v and section.Tab.Window.Library.Theme.AccentDark
+                        or section.Tab.Window.Library.Theme.SurfaceDeep
 
                     TweenService:Create(sw, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                         BackgroundColor3 = bg,
@@ -1622,7 +1833,7 @@ function Library:CreateWindow(opts)
                 local box = create("TextBox", {
                     Position = UDim2.new(0, 0, 0, 22),
                     Size = UDim2.new(1, 0, 0, self.Tab.Window.IsMobile and 31 or 29),
-                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceAlt,
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceDeep,
                     BorderSizePixel = 0,
                     Text = "",
                     PlaceholderText = tostring(options.Placeholder or "Type here..."),
@@ -1634,7 +1845,12 @@ function Library:CreateWindow(opts)
                     ClearTextOnFocus = options.ClearTextOnFocus == true,
                 }, host)
                 corner(box, 7)
-                stroke(box, Color3.fromRGB(255, 255, 255), 0.9, 1)
+                local boxStroke = stroke(box, self.Tab.Window.Library.Theme.StrokeSoft, 0.56, 1)
+                bindHover(box, {
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceAlt,
+                }, {
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceDeep,
+                }, 0.12)
 
                 local obj = {
                     Type = "Input",
@@ -1677,7 +1893,18 @@ function Library:CreateWindow(opts)
                 end
 
                 connect(box.FocusLost, function()
+                    if boxStroke then
+                        boxStroke.Color = section.Tab.Window.Library.Theme.StrokeSoft
+                        boxStroke.Transparency = 0.56
+                    end
                     obj:SetValue(box.Text, false)
+                end)
+
+                connect(box.Focused, function()
+                    if boxStroke then
+                        boxStroke.Color = section.Tab.Window.Library.Theme.Accent
+                        boxStroke.Transparency = 0.22
+                    end
                 end)
 
                 section.Tab.Window.Library.Options[flag] = obj
@@ -1747,11 +1974,11 @@ function Library:CreateWindow(opts)
                 local bar = create("Frame", {
                     Position = UDim2.new(0, 0, 0, 28),
                     Size = UDim2.new(1, 0, 0, self.Tab.Window.IsMobile and 14 or 12),
-                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceAlt,
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceDeep,
                     BorderSizePixel = 0,
                 }, host)
                 corner(bar, 999)
-                stroke(bar, Color3.fromRGB(255, 255, 255), 0.9, 1)
+                stroke(bar, self.Tab.Window.Library.Theme.StrokeSoft, 0.56, 1)
 
                 local fill = create("Frame", {
                     Size = UDim2.new(0, 0, 1, 0),
@@ -1759,14 +1986,18 @@ function Library:CreateWindow(opts)
                     BorderSizePixel = 0,
                 }, bar)
                 corner(fill, 999)
-                gradient(fill, { self.Tab.Window.Library.Theme.AccentDark, self.Tab.Window.Library.Theme.Accent }, 0)
+                gradient(fill, {
+                    self.Tab.Window.Library.Theme.AccentDark,
+                    self.Tab.Window.Library.Theme.Accent,
+                    Color3.fromRGB(148, 229, 255),
+                }, 0)
 
                 local knobSize = self.Tab.Window.IsMobile and 16 or 14
                 local knob = create("Frame", {
                     AnchorPoint = Vector2.new(0.5, 0.5),
                     Size = UDim2.fromOffset(knobSize, knobSize),
                     Position = UDim2.new(0, 0, 0.5, 0),
-                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                    BackgroundColor3 = Color3.fromRGB(230, 243, 255),
                     BorderSizePixel = 0,
                 }, bar)
                 corner(knob, 999)
@@ -1896,7 +2127,7 @@ function Library:CreateWindow(opts)
                     AutoButtonColor = false,
                     Position = UDim2.new(1, -124, 0.5, -((self.Tab.Window.IsMobile and 28 or 24) / 2)),
                     Size = UDim2.fromOffset(124, self.Tab.Window.IsMobile and 28 or 24),
-                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceAlt,
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceDeep,
                     BorderSizePixel = 0,
                     Text = "None",
                     TextColor3 = self.Tab.Window.Library.Theme.Text,
@@ -1904,7 +2135,12 @@ function Library:CreateWindow(opts)
                     TextSize = self.Tab.Window.IsMobile and 13 or 12,
                 }, host)
                 corner(bindButton, 7)
-                stroke(bindButton, Color3.fromRGB(255, 255, 255), 0.9, 1)
+                stroke(bindButton, self.Tab.Window.Library.Theme.StrokeSoft, 0.56, 1)
+                bindHover(bindButton, {
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceAlt,
+                }, {
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceDeep,
+                }, 0.12)
 
                 local obj = {
                     Type = "Keybind",
@@ -2033,12 +2269,17 @@ function Library:CreateWindow(opts)
                     Text = "",
                     AutoButtonColor = false,
                     Size = UDim2.new(1, 0, 0, headerH),
-                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceAlt,
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceDeep,
                     BorderSizePixel = 0,
                     ZIndex = 4,
                 }, host)
                 corner(header, 8)
-                stroke(header, Color3.fromRGB(255, 255, 255), 0.9, 1)
+                stroke(header, self.Tab.Window.Library.Theme.StrokeSoft, 0.56, 1)
+                bindHover(header, {
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceAlt,
+                }, {
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceDeep,
+                }, 0.12)
 
                 create("TextLabel", {
                     BackgroundTransparency = 1,
@@ -2079,13 +2320,17 @@ function Library:CreateWindow(opts)
                 local panel = create("Frame", {
                     Position = UDim2.new(0, 8, 0, headerH + 6),
                     Size = UDim2.new(1, -16, 0, 0),
-                    BackgroundColor3 = self.Tab.Window.Library.Theme.Surface,
+                    BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceDeep,
                     BorderSizePixel = 0,
                     ClipsDescendants = true,
                     ZIndex = 7,
                 }, host)
                 corner(panel, 8)
-                stroke(panel, self.Tab.Window.Library.Theme.AccentDark, 0.65, 1)
+                stroke(panel, self.Tab.Window.Library.Theme.Stroke, 0.46, 1)
+                gradient(panel, {
+                    self.Tab.Window.Library.Theme.SurfaceDeep,
+                    self.Tab.Window.Library.Theme.SurfaceAlt,
+                }, 90)
 
                 create("UIPadding", {
                     PaddingLeft = UDim.new(0, 6),
@@ -2098,7 +2343,7 @@ function Library:CreateWindow(opts)
                 if searchable then
                     searchBox = create("TextBox", {
                         Size = UDim2.new(1, 0, 0, self.Tab.Window.IsMobile and 30 or 28),
-                        BackgroundColor3 = self.Tab.Window.Library.Theme.SurfaceAlt,
+                        BackgroundColor3 = self.Tab.Window.Library.Theme.Surface,
                         BorderSizePixel = 0,
                         Text = "",
                         PlaceholderText = "Search...",
@@ -2110,7 +2355,7 @@ function Library:CreateWindow(opts)
                         ZIndex = 8,
                     }, panel)
                     corner(searchBox, 7)
-                    stroke(searchBox, Color3.fromRGB(255, 255, 255), 0.9, 1)
+                    stroke(searchBox, self.Tab.Window.Library.Theme.StrokeSoft, 0.56, 1)
                 end
 
                 local list = create("ScrollingFrame", {
@@ -2120,6 +2365,7 @@ function Library:CreateWindow(opts)
                     BorderSizePixel = 0,
                     CanvasSize = UDim2.new(),
                     ScrollBarThickness = self.Tab.Window.IsMobile and 4 or 5,
+                    ScrollBarImageColor3 = self.Tab.Window.Library.Theme.StrokeSoft,
                     ZIndex = 8,
                 }, panel)
 
@@ -2212,9 +2458,9 @@ function Library:CreateWindow(opts)
                         row.Mark.BackgroundColor3 = selected and section.Tab.Window.Library.Theme.Success
                             or section.Tab.Window.Library.Theme.Muted
                         row.Mark.BackgroundTransparency = selected and 0 or 0.8
-                        row.Button.BackgroundTransparency = selected and 0 or 0.85
+                        row.Button.BackgroundTransparency = selected and 0.18 or 0.62
                         row.Button.BackgroundColor3 = selected and section.Tab.Window.Library.Theme.SurfaceAlt
-                            or Color3.fromRGB(0, 0, 0)
+                            or section.Tab.Window.Library.Theme.Surface
                     end
                 end
 
@@ -2288,14 +2534,14 @@ function Library:CreateWindow(opts)
                             Text = "",
                             AutoButtonColor = false,
                             Size = UDim2.new(1, -2, 0, rowH),
-                            BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-                            BackgroundTransparency = 0.85,
+                            BackgroundColor3 = section.Tab.Window.Library.Theme.Surface,
+                            BackgroundTransparency = 0.62,
                             BorderSizePixel = 0,
                             LayoutOrder = i,
                             ZIndex = 8,
                         }, list)
                         corner(button, 6)
-                        stroke(button, Color3.fromRGB(255, 255, 255), 0.93, 1)
+                        stroke(button, section.Tab.Window.Library.Theme.StrokeSoft, 0.66, 1)
 
                         local mark = create("Frame", {
                             Size = UDim2.fromOffset(12, 12),
