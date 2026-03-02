@@ -1041,30 +1041,8 @@ function Library:CreateWindow(opts)
 
     local root = create("Frame", {
         Size = UDim2.fromScale(1, 1),
-        BackgroundColor3 = self.Theme.Background,
-        BackgroundTransparency = 0.08,
+        BackgroundTransparency = 1,
     }, gui)
-    gradient(root, {
-        Color3.fromRGB(2, 10, 18),
-        self.Theme.Background,
-        Color3.fromRGB(2, 8, 15),
-    }, 70)
-
-    local ambience = create("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.fromScale(0.5, 0.52),
-        Size = UDim2.new(1.35, 0, 1.35, 0),
-        BackgroundColor3 = self.Theme.Glow,
-        BackgroundTransparency = 0.92,
-        BorderSizePixel = 0,
-        ZIndex = 0,
-    }, root)
-    corner(ambience, 999)
-    gradient(ambience, {
-        Color3.fromRGB(34, 117, 186),
-        self.Theme.Glow,
-        Color3.fromRGB(18, 74, 128),
-    }, 42)
 
     local mainShadow = create("Frame", {
         AnchorPoint = Vector2.new(0.5, 0.5),
@@ -1080,6 +1058,22 @@ function Library:CreateWindow(opts)
         Color3.fromRGB(4, 20, 34),
         Color3.fromRGB(1, 9, 18),
     }, 90)
+
+    local mainGlow = create("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.new(size.X.Scale, size.X.Offset + 50, size.Y.Scale, size.Y.Offset + 54),
+        BackgroundColor3 = self.Theme.Glow,
+        BackgroundTransparency = 0.95,
+        BorderSizePixel = 0,
+        ZIndex = 0,
+    }, root)
+    corner(mainGlow, 22)
+    gradient(mainGlow, {
+        Color3.fromRGB(36, 120, 188),
+        self.Theme.Glow,
+        Color3.fromRGB(18, 76, 128),
+    }, 35)
 
     local main = create("Frame", {
         AnchorPoint = Vector2.new(0.5, 0.5),
@@ -1111,6 +1105,9 @@ function Library:CreateWindow(opts)
     connect(main:GetPropertyChangedSignal("Position"), function()
         if mainShadow and mainShadow.Parent then
             mainShadow.Position = main.Position
+        end
+        if mainGlow and mainGlow.Parent then
+            mainGlow.Position = main.Position
         end
     end)
 
@@ -1152,7 +1149,7 @@ function Library:CreateWindow(opts)
 
     create("TextLabel", {
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -122, 0, 22),
+        Size = UDim2.new(1, -100, 0, 22),
         Text = opts.Title or "Xero Hub - GPO",
         TextXAlignment = Enum.TextXAlignment.Left,
         TextColor3 = self.Theme.Text,
@@ -1164,7 +1161,7 @@ function Library:CreateWindow(opts)
     create("TextLabel", {
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 0, 0, 22),
-        Size = UDim2.new(1, -122, 0, 16),
+        Size = UDim2.new(1, -100, 0, 16),
         Text = opts.Subtitle or "Blue Water Samurai UI - mobile-ready, searchable, auto-config",
         TextXAlignment = Enum.TextXAlignment.Left,
         TextColor3 = self.Theme.Muted,
@@ -1175,41 +1172,55 @@ function Library:CreateWindow(opts)
 
     local buttons = create("Frame", {
         BackgroundTransparency = 1,
-        Size = UDim2.new(0, 116, 1, 0),
-        Position = UDim2.new(1, -116, 0, 0),
+        Size = UDim2.new(0, 92, 1, 0),
+        Position = UDim2.new(1, -92, 0, 0),
         ZIndex = 5,
     }, topbar)
     create("UIListLayout", {
         FillDirection = Enum.FillDirection.Horizontal,
         HorizontalAlignment = Enum.HorizontalAlignment.Right,
         VerticalAlignment = Enum.VerticalAlignment.Center,
-        Padding = UDim.new(0, 9),
+        Padding = UDim.new(0, 7),
     }, buttons)
 
-    local function topButton(text, bg, hoverBg)
+    local function topButton(text, kind)
+        local baseBg = self.Theme.SurfaceDeep
+        local baseText = self.Theme.Muted
+        local hoverBg = self.Theme.SurfaceAlt
+        local hoverText = self.Theme.Text
+
+        if kind == "close" then
+            hoverBg = Color3.fromRGB(52, 24, 31)
+            hoverText = Color3.fromRGB(255, 220, 228)
+        elseif kind == "min" then
+            hoverBg = Color3.fromRGB(24, 56, 84)
+        end
+
         local b = create("TextButton", {
             Text = text,
             AutoButtonColor = false,
-            Size = UDim2.fromOffset(isMobile and 38 or 34, isMobile and 30 or 26),
-            BackgroundColor3 = bg,
-            TextColor3 = Color3.fromRGB(255, 255, 255),
-            Font = Enum.Font.GothamBold,
-            TextSize = isMobile and 14 or 13,
+            Size = UDim2.fromOffset(isMobile and 34 or 30, isMobile and 28 or 24),
+            BackgroundColor3 = baseBg,
+            TextColor3 = baseText,
+            Font = Enum.Font.GothamSemibold,
+            TextSize = isMobile and 14 or 12,
             BorderSizePixel = 0,
             ZIndex = 5,
         }, buttons)
-        corner(b, 8)
-        stroke(b, self.Theme.Stroke, 0.48, 1)
+        corner(b, 7)
+        stroke(b, self.Theme.StrokeSoft, 0.62, 1)
         bindHover(b, {
-            BackgroundColor3 = hoverBg or bg,
+            BackgroundColor3 = hoverBg,
+            TextColor3 = hoverText,
         }, {
-            BackgroundColor3 = bg,
+            BackgroundColor3 = baseBg,
+            TextColor3 = baseText,
         }, 0.12)
         return b
     end
 
-    local minBtn = topButton("-", self.Theme.SurfaceRaised, self.Theme.AccentDark)
-    local closeBtn = topButton("x", self.Theme.Danger, Color3.fromRGB(245, 124, 146))
+    local minBtn = topButton("-", "min")
+    local closeBtn = topButton("x", "close")
 
     local tabBar = create("ScrollingFrame", {
         Position = UDim2.new(0, 0, 0, topHeight),
@@ -1270,6 +1281,7 @@ function Library:CreateWindow(opts)
         Gui = gui,
         Main = main,
         MainShadow = mainShadow,
+        MainGlow = mainGlow,
         Body = body,
         Tabs = {},
         ActiveTab = nil,
@@ -1359,6 +1371,9 @@ function Library:CreateWindow(opts)
             if self.MainShadow then
                 self.MainShadow.Size = UDim2.new(self.ExpandedSize.X.Scale, self.ExpandedSize.X.Offset + 30, 0, bodyY + 38)
             end
+            if self.MainGlow then
+                self.MainGlow.Size = UDim2.new(self.ExpandedSize.X.Scale, self.ExpandedSize.X.Offset + 50, 0, bodyY + 58)
+            end
         else
             body.Visible = true
             main.Size = self.ExpandedSize
@@ -1368,6 +1383,14 @@ function Library:CreateWindow(opts)
                     self.ExpandedSize.X.Offset + 30,
                     self.ExpandedSize.Y.Scale,
                     self.ExpandedSize.Y.Offset + 34
+                )
+            end
+            if self.MainGlow then
+                self.MainGlow.Size = UDim2.new(
+                    self.ExpandedSize.X.Scale,
+                    self.ExpandedSize.X.Offset + 50,
+                    self.ExpandedSize.Y.Scale,
+                    self.ExpandedSize.Y.Offset + 54
                 )
             end
         end
